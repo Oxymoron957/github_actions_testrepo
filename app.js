@@ -4,7 +4,7 @@ const port = 8080
 
 app.get('/', (req, res) => {
   res.status(200);
-  res.send('Hello World from AZ1!')
+  res.send('Hello World from AZ1.!')
 })
 
 app.listen(port, () => {
