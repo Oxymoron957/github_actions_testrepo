@@ -1,11 +1,11 @@
 name: deploy
-# 해당 브랜치가 push 될 때 해당 액션을 실행
+
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-# 액션을 실행시키는 runner의 운영체제
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,22 +13,21 @@ jobs:
     strategy:
       matrix:
         node-version: [16.x]
-    #액션의 실행 수행내용, 단계별로 실행된다.
+
     steps:
       - name: Checkout source code.
         uses: actions/checkout@v2
-
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
-
+      # 컴파일 
       - name: Install dependencies
         run: npm install
-        
+      # Zip 파일 생성
       - name: zip distributions
-        run: zip -r together-zip.zip ./app.js ./appspec.yml ./scripts
-
+        run: zip -r src.zip ./*
+      # AWS에 접속하기 위한 key 정보 
       - name: AWS configure credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -38,11 +37,11 @@ jobs:
           
       #s3에 업로드 & CodeDeploy로 배포 생성
       - name: upload to S3
-        run: aws s3 cp --region eu-west-3 ./together-zip.zip s3://kth-s3-cicd
+        run: aws s3 cp --region eu-west-3 ./src.zip s3://kth-s3-cicd
 
       - name: deploy with AWS codeDeploy
         run: aws deploy create-deployment
           --application-name kth_codedeploy_app
           --deployment-config-name CodeDeployDefault.OneAtATime
           --deployment-group-name kth_codedeploy_group
-          --s3-location bucket=kth-s3-cicd,bundleType=zip,key=together-zip.zip
+          --s3-location bucket=kth-s3-cicd,bundleType=zip,key=src.zip
